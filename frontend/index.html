@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TradeEscrow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="logo">◆</span>
+      <div>
+        <h1>TradeEscrow</h1>
+        <p>Trustless payments for agricultural exports</p>
+      </div>
+    </div>
+    <div class="wallet">
+      <span id="network" class="pill muted">Not connected</span>
+      <button id="connect" class="btn primary">Connect wallet</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h2>Pay for goods only when they arrive as agreed.</h2>
+      <p>
+        The buyer locks payment in a smart contract. The exporter ships. An independent
+        inspector confirms the delivery, and the payment is released automatically.
+        If the shipment fails inspection or never arrives, the buyer gets the money back.
+      </p>
+      <ol class="flow">
+        <li><b>1</b> Buyer deposits</li>
+        <li><b>2</b> Exporter ships</li>
+        <li><b>3</b> Inspector approves</li>
+        <li><b>4</b> Exporter is paid</li>
+      </ol>
+    </section>
+
+    <div class="grid">
+      <section class="card">
+        <h3>New deal <span class="muted small">(you are the buyer)</span></h3>
+        <form id="create">
+          <label>Product
+            <input name="product" required placeholder="20 t Dark Kabuli chickpeas, 8mm" />
+          </label>
+          <label>Exporter address
+            <input name="exporter" required placeholder="0x…" />
+          </label>
+          <label>Inspector address
+            <input name="inspector" required placeholder="0x…" />
+          </label>
+          <div class="row">
+            <label>Payment (ETH)
+              <input name="amount" required type="number" step="0.0001" min="0.0001" value="0.01" />
+            </label>
+            <label>Deadline (days)
+              <input name="days" required type="number" min="1" value="30" />
+            </label>
+          </div>
+          <button class="btn primary wide" type="submit">Lock payment &amp; create deal</button>
+        </form>
+      </section>
+
+      <section class="card deals">
+        <div class="deals-head">
+          <h3>Deals</h3>
+          <div>
+            <label class="toggle"><input type="checkbox" id="mineOnly" checked /> Only mine</label>
+            <button id="refresh" class="btn ghost small">Refresh</button>
+          </div>
+        </div>
+        <div id="list"><p class="muted">Connect your wallet to see deals.</p></div>
+      </section>
+    </div>
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <footer>
+    Contract: <a id="contractLink" target="_blank" rel="noopener"></a>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.17.0/dist/ethers.umd.min.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
