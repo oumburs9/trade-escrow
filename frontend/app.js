@@ -1,5 +1,13 @@
 /* global ethers, ESCROW_CONFIG */
 const STATUS = ["Funded", "Shipped", "Released", "Refunded"];
+
+// If config.js has no address yet, use the one saved by deploy.html in this browser.
+if (!ESCROW_CONFIG.address) {
+  try {
+    const saved = localStorage.getItem("tradeEscrowAddress");
+    if (saved) Object.assign(ESCROW_CONFIG, { address: saved, chainId: 11155111, abi: window.ESCROW_ARTIFACT.abi });
+  } catch (e) {}
+}
 const NETWORKS = {
   11155111: { name: "Sepolia", explorer: "https://sepolia.etherscan.io" },
   31337: { name: "Localhost", explorer: "" },
@@ -41,7 +49,7 @@ async function connect() {
     return;
   }
   if (!ESCROW_CONFIG.address) {
-    toast("The contract isn't deployed yet. Run `npm run deploy:sepolia` and push frontend/config.js.", true);
+    toast("The contract isn't deployed yet. Open deploy.html to deploy it.", true);
     return;
   }
   provider = new ethers.BrowserProvider(window.ethereum);

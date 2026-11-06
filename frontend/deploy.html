@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Deploy TradeEscrow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .deploy { max-width: 620px; margin: 32px auto; }
+    .deploy ol { padding-left: 20px; }
+    .deploy li { margin-bottom: 6px; }
+    .stat { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 0.9rem; margin: 16px 0; }
+    .stat dt { color: var(--muted); }
+    .stat dd { margin: 0; font-family: ui-monospace, monospace; overflow-wrap: anywhere; }
+    #result { margin-top: 16px; }
+    .done { background: #e1f0e8; border: 1px solid #bcdcca; border-radius: 10px; padding: 14px; overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="logo">◆</span>
+      <div>
+        <h1>TradeEscrow</h1>
+        <p>Deploy the contract with your browser wallet</p>
+      </div>
+    </div>
+    <a class="btn ghost" href="./">← Back to app</a>
+  </header>
+
+  <main>
+    <section class="card deploy">
+      <h3>Deploy to Sepolia</h3>
+      <ol class="muted">
+        <li>Open MetaMask and select the account you want to deploy from (your Buyer account is fine).</li>
+        <li>Make sure it has a little Sepolia ETH (deploying costs well under 0.01 ETH).</li>
+        <li>Click <b>Connect</b>, then <b>Deploy contract</b>, and confirm in MetaMask.</li>
+      </ol>
+      <dl class="stat">
+        <dt>Account</dt><dd id="acct">—</dd>
+        <dt>Network</dt><dd id="net">—</dd>
+        <dt>Balance</dt><dd id="bal">—</dd>
+      </dl>
+      <div class="actions">
+        <button id="connect" class="btn">Connect</button>
+        <button id="deploy" class="btn primary" disabled>Deploy contract</button>
+      </div>
+      <div id="result"></div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.17.0/dist/ethers.umd.min.js"></script>
+  <script src="artifact.js"></script>
+  <script>
+    const SEPOLIA = 11155111;
+    const $ = (id) => document.getElementById(id);
+    let signer;
+
+    function toast(msg, err) {
+      const t = $("toast");
+      t.textContent = msg;
+      t.className = "toast" + (err ? " error" : "");
+      t.hidden = false;
+      clearTimeout(toast.t);
+      toast.t = setTimeout(() => (t.hidden = true), 6000);
+    }
+
+    async function ensureSepolia() {
+      const hex = "0x" + SEPOLIA.toString(16);
+      try {
+        await ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: hex }] });
+      } catch (e) {
+        if (e.code === 4902) {
+          await ethereum.request({
+            method: "wallet_addEthereumChain",
+            params: [{
+              chainId: hex,
+              chainName: "Sepolia",
+              nativeCurrency: { name: "Sepolia ETH", symbol: "ETH", decimals: 18 },
+              rpcUrls: ["https://ethereum-sepolia-rpc.publicnode.com"],
+              blockExplorerUrls: ["https://sepolia.etherscan.io"],
+            }],
+          });
+        } else throw e;
+      }
+    }
+
+    async function connect() {
+      if (!window.ethereum) return toast("No wallet found. Install MetaMask first.", true);
+      await ethereum.request({ method: "eth_requestAccounts" });
+      await ensureSepolia();
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      signer = await provider.getSigner();
+      const addr = await signer.getAddress();
+      const { chainId } = await provider.getNetwork();
+      const bal = await provider.getBalance(addr);
+      $("acct").textContent = addr;
+      $("net").textContent = Number(chainId) === SEPOLIA ? "Sepolia" : `Chain ${chainId} (switch to Sepolia)`;
+      $("bal").textContent = ethers.formatEther(bal) + " ETH";
+      $("deploy").disabled = Number(chainId) !== SEPOLIA || bal === 0n;
+      if (bal === 0n) toast("This account has no Sepolia ETH yet. Get some from a faucet first.", true);
+    }
+
+    async function deploy() {
+      $("deploy").disabled = true;
+      try {
+        const { abi, bytecode } = window.ESCROW_ARTIFACT;
+        const factory = new ethers.ContractFactory(abi, bytecode, signer);
+        toast("Confirm the transaction in your wallet…");
+        const contract = await factory.deploy();
+        const tx = contract.deploymentTransaction();
+        $("result").innerHTML = `<p class="muted">Deploying… <a target="_blank" rel="noopener" href="https://sepolia.etherscan.io/tx/${tx.hash}">view transaction</a></p>`;
+        await contract.waitForDeployment();
+        const address = await contract.getAddress();
+        try { localStorage.setItem("tradeEscrowAddress", address); } catch (e) {}
+        $("result").innerHTML = `
+          <div class="done">
+            <b>Deployed!</b><br />
+            Contract address:<br /><code>${address}</code><br /><br />
+            <a target="_blank" rel="noopener" href="https://sepolia.etherscan.io/address/${address}">View on Etherscan</a>
+            · <a href="./">Open the app</a>
+          </div>`;
+        toast("Contract deployed.");
+      } catch (e) {
+        toast(e?.code === "ACTION_REJECTED" ? "You cancelled the transaction." : (e.shortMessage || e.message), true);
+        $("deploy").disabled = false;
+      }
+    }
+
+    $("connect").addEventListener("click", () => connect().catch((e) => toast(e.shortMessage || e.message, true)));
+    $("deploy").addEventListener("click", deploy);
+  </script>
+</body>
+</html>
