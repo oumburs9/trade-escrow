@@ -1,6 +1,10 @@
 # TradeEscrow
 
+[![Tests](https://github.com/oumburs9/trade-escrow/actions/workflows/test.yml/badge.svg)](https://github.com/oumburs9/trade-escrow/actions/workflows/test.yml)
+
 **Trustless payments for agricultural exports, on Ethereum.**
+
+**Live app:** https://oumburs9.github.io/trade-escrow/ (Sepolia testnet)
 
 ## The problem
 
