@@ -6,6 +6,8 @@
 
 **Live app:** https://oumburs9.github.io/trade-escrow/ (Sepolia testnet)
 
+**Contract:** [`0xf34A750283881792Fff8BF85C3F0C13C996aA266`](https://sepolia.etherscan.io/address/0xf34A750283881792Fff8BF85C3F0C13C996aA266) on Sepolia
+
 ## The problem
 
 When an Ethiopian exporter sells coffee, chickpeas or sesame to a buyer abroad, neither side fully trusts the other:
