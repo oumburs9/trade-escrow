@@ -72,7 +72,22 @@ async function connect() {
   $("network").className = "pill Released";
   $("connect").textContent = "Connected";
   $("connect").disabled = true;
+  $("switch").hidden = false;
   await loadDeals();
+}
+
+// MetaMask only shows the site the accounts you connected to it, so switching
+// accounts inside MetaMask isn't enough. This clears the site's connection and
+// asks MetaMask again, which connects whichever account is selected in MetaMask.
+async function switchAccount() {
+  try {
+    await window.ethereum.request({ method: "wallet_revokePermissions", params: [{ eth_accounts: {} }] });
+  } catch (e) {
+    // Older wallets without revoke: fall back to the account picker.
+    await window.ethereum.request({ method: "wallet_requestPermissions", params: [{ eth_accounts: {} }] });
+  }
+  $("connect").disabled = false;
+  await connect();
 }
 
 async function switchNetwork(chainId) {
@@ -174,6 +189,7 @@ async function send(promiseFn, okMsg) {
 }
 
 $("connect").addEventListener("click", () => connect().catch((e) => toast(niceError(e), true)));
+$("switch").addEventListener("click", () => switchAccount().catch((e) => toast(niceError(e), true)));
 $("refresh").addEventListener("click", loadDeals);
 $("mineOnly").addEventListener("change", loadDeals);
 
@@ -219,8 +235,17 @@ $("list").addEventListener("click", async (ev) => {
 });
 
 if (window.ethereum) {
-  window.ethereum.on?.("accountsChanged", () => location.reload());
+  // Re-read the account without reloading the page (a reload would cancel a pending switch).
+  window.ethereum.on?.("accountsChanged", (accs) => {
+    if (accs && accs.length && contract) connect().catch((e) => toast(niceError(e), true));
+  });
   window.ethereum.on?.("chainChanged", () => location.reload());
+
+  // Reconnect automatically if this site is already connected.
+  window.ethereum
+    .request({ method: "eth_accounts" })
+    .then((accs) => { if (accs.length && ESCROW_CONFIG.address) return connect(); })
+    .catch(() => {});
 }
 
 (function initFooter() {
