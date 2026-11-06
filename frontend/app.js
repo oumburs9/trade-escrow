@@ -40,6 +40,10 @@ async function connect() {
     toast("No wallet found. Install MetaMask or another browser wallet.", true);
     return;
   }
+  if (!ESCROW_CONFIG.address) {
+    toast("The contract isn't deployed yet. Run `npm run deploy:sepolia` and push frontend/config.js.", true);
+    return;
+  }
   provider = new ethers.BrowserProvider(window.ethereum);
   await provider.send("eth_requestAccounts", []);
   signer = await provider.getSigner();
